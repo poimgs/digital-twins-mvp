@@ -177,7 +177,6 @@ terraform/
 *.tfstate.backup
 
 # Database Dumps
-*.sql
 *.dump
 database_backup/
 db_exports/
