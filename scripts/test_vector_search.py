@@ -4,7 +4,7 @@ from typing import List
 
 from src.config import get_settings
 from src.models import ChatMemory
-from src.supabase_vector_matcher import SupabaseVectorStoryMatcher
+from src.core.story_matcher import StoryMatcher
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ async def test_vector_search():
     settings = get_settings()
     bot_id = "alex_v1"  # Change to your bot ID
     
-    vector_matcher = SupabaseVectorStoryMatcher(bot_id, settings)
+    vector_matcher = StoryMatcher(bot_id, settings)
     
     # Create sample chat memory
     chat_memory = ChatMemory(
@@ -72,7 +72,7 @@ async def benchmark_vector_search():
     settings = get_settings()
     bot_id = "alex_v1"
     
-    vector_matcher = SupabaseVectorStoryMatcher(bot_id, settings)
+    vector_matcher = StoryMatcher(bot_id, settings)
     
     chat_memory = ChatMemory(
         chat_id="benchmark_chat",

@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from src.config import get_settings
 from src.storage import StorageManager
-from src.supabase_vector_matcher import SupabaseVectorStoryMatcher
+from src.core.story_matcher import StoryMatcher
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ async def initialize_embeddings_for_bot(bot_id: str):
     """Initialize embeddings for a specific bot"""
     settings = get_settings()
     storage = StorageManager(bot_id, settings)
-    vector_matcher = SupabaseVectorStoryMatcher(bot_id, settings)
+    vector_matcher = StoryMatcher(bot_id, settings)
     
     try:
         # Load all stories for the bot
