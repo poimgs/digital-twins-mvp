@@ -1,18 +1,19 @@
 import logging
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 import openai
 
-from ..models import ChatMemory
+from ..models import BotMetadata, ChatMemory
 from ..storage import StorageManager
 from ..config import get_settings
-from .personality import Personality
+from .personality import PersonalityCore
 from .story_matcher import StoryMatcher
 
 logger = logging.getLogger(__name__)
 
 class DigitalTwinBot:
-    """Main bot class orchestrating all components - fully data-driven"""
+    """Main bot class orchestrating all components - fully data-driven with vector story matching"""
+    
     def __init__(self, bot_id: str):
         self.bot_id = bot_id
         self.settings = get_settings()
@@ -33,8 +34,9 @@ class DigitalTwinBot:
             # Load bot metadata from database
             self.metadata = await self.storage.load_bot_metadata()
             if not self.metadata:
-                logger.error(f"No metadata found for bot {self.bot_id}")
-                return False
+                logger.warning(f"No metadata found for bot {self.bot_id}, creating default")
+                self.metadata = self.storage.get_default_metadata()
+                await self.storage.save_bot_metadata(self.metadata)
             
             # Check if bot is active
             if not self.metadata.is_active:
@@ -42,15 +44,22 @@ class DigitalTwinBot:
                 return False
             
             # Initialize personality from metadata
-            self.personality = Personality(self.metadata)
+            self.personality = PersonalityCore(self.metadata)
             
             # Load stories for this bot
             self.stories = await self.storage.load_stories()
             if not self.stories:
-                logger.error(f"No stories found for bot {self.bot_id}, creating defaults")
-                return False
+                logger.warning(f"No stories found for bot {self.bot_id}, creating defaults")
+                default_stories = self.storage.get_default_stories()
+                await self.storage.save_stories(default_stories)
+                self.stories = default_stories
             
-            self.story_matcher = StoryMatcher(self.stories)
+            # Initialize story matcher with vector capabilities
+            self.story_matcher = StoryMatcher(self.bot_id, self.settings)
+            
+            # Initialize embeddings for stories
+            await self.story_matcher.initialize_story_embeddings(self.stories)
+            
             self.is_initialized = True
             
             logger.info(f"✅ Bot initialized: {self.metadata.display_name} ({self.bot_id})")
@@ -74,6 +83,21 @@ class DigitalTwinBot:
         if not self.is_initialized or not self.metadata:
             return "Hi! I'm having trouble accessing my configuration right now. Please try again in a moment."
         return self.metadata.welcome_message
+    
+    def get_bot_info(self) -> Dict:
+        """Get bot information for display"""
+        if not self.is_initialized or not self.metadata:
+            return {"error": "Bot not properly initialized"}
+            
+        return {
+            "name": self.metadata.display_name,
+            "description": self.metadata.description,
+            "version": self.metadata.version,
+            "traits": self.metadata.core_traits,
+            "story_count": len(self.stories),
+            "story_sharing": self.metadata.story_sharing_frequency,
+            "response_style": self.metadata.response_length_preference
+        }
     
     async def get_chat_memory(self, chat_id: str) -> ChatMemory:
         """Get or create chat memory for a conversation"""
@@ -106,35 +130,40 @@ class DigitalTwinBot:
         await self.storage.save_chat_memory(memory)
     
     async def generate_response(self, user_message: str, chat_id: str) -> str:
-        """Generate contextual response with potential story integration"""
+        """Generate contextual response with intelligent story sharing"""
         
         if not self.is_initialized:
             return "I'm still getting my thoughts together. Please give me a moment to initialize properly."
         
         memory = await self.get_chat_memory(chat_id)
         
-        # Find relevant stories based on bot's story sharing frequency
-        max_stories = {
-            "low": 1,
-            "moderate": 2, 
-            "high": 3
-        }.get(self.metadata.story_sharing_frequency, 2)
+        # Check if we should share a story using vector matching + LLM judge
+        story_decision = await self.story_matcher.should_share_story(user_message, memory)
         
-        relevant_stories = self.story_matcher.find_relevant_stories(
-            user_message, memory, max_stories=max_stories
-        )
-        
-        # Build conversation context using bot's full context
+        # Build conversation context
         context_parts = [
             self.personality.full_context,
             f"Conversation stage: {memory.relationship_stage}",
             f"Previous themes discussed: {', '.join(memory.conversation_themes[-5:])}"
         ]
         
-        if relevant_stories:
-            context_parts.append("You have these relevant personal stories you could naturally weave in if appropriate:")
-            for story in relevant_stories:
-                context_parts.append(f"- {story.content}")
+        # Add story sharing guidance based on AI decision
+        if story_decision["should_share"] and story_decision["story_match"]:
+            story = story_decision["story_match"].story
+            context_parts.extend([
+                "",
+                f"STORY SHARING OPPORTUNITY (Confidence: {story_decision['confidence']:.2f}):",
+                f"You have a highly relevant personal story that would enhance this conversation:",
+                f"Title: {story.title}",
+                f"Content: {story.content}",
+                f"Why it's relevant: {story_decision['story_match'].reasoning}",
+                "",
+                "GUIDANCE: Share this story naturally in your response if it feels right in the conversation flow.",
+                "Don't force it - only include if it genuinely adds value to your response."
+            ])
+        else:
+            # Don't mention stories unless there's a compelling match
+            context_parts.append(f"Story sharing: {story_decision['reasoning']}")
         
         # Add response length guidance
         length_guidance = {
@@ -147,8 +176,6 @@ class DigitalTwinBot:
             "",
             "Instructions:",
             "- Respond naturally to the user's message in your authentic voice",
-            "- If a personal story feels relevant and natural, share it conversationally", 
-            "- Don't force stories - only share if they genuinely relate",
             "- Ask follow-up questions to keep the conversation flowing",
             "- Be warm, genuine, and curious about the user's experiences",
             f"- {length_guidance.get(self.metadata.response_length_preference, length_guidance['medium'])}"
@@ -171,11 +198,16 @@ class DigitalTwinBot:
             
             bot_response = response.choices[0].message.content
             
-            # Check if any stories were used and update memory
-            for story in relevant_stories:
-                if any(phrase in bot_response.lower() for phrase in story.content.lower().split('.')[0:2]):
+            # Check if the story was actually used in the response
+            if story_decision["should_share"] and story_decision["story_match"]:
+                story = story_decision["story_match"].story
+                # Simple check: if key phrases from the story appear in response
+                story_key_phrases = story.content.lower().split('.')[0:2]  # First two sentences
+                if any(phrase.strip() in bot_response.lower() for phrase in story_key_phrases if len(phrase.strip()) > 10):
+                    # Story was used - update memory and usage
                     memory.stories_shared.append(story.id)
                     await self.storage.update_story_usage(story.id)
+                    logger.info(f"Story '{story.title}' shared in conversation {chat_id}")
             
             # Update chat memory
             await self.update_chat_memory(chat_id, user_message, bot_response)
