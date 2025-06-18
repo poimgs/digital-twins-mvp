@@ -1,0 +1,249 @@
+# Environment Variables and Secrets
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+*.env
+config.json
+secrets.json
+
+# API Keys and Tokens
+*_token.txt
+*_key.txt
+api_keys/
+credentials/
+.secrets/
+
+# Bot Data and Storage
+bot_data/
+data/
+embeddings/
+vectors/
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+*.log.*
+log_*
+debug.log
+error.log
+access.log
+bot.log
+conversation.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.env/
+conda-env/
+pyenv/
+pipenv/
+poetry.lock
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+.atom/
+.brackets.json
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+pytest.ini
+.cache/
+
+# Documentation
+docs/_build/
+docs/build/
+site/
+.mkdocs/
+
+# Docker
+.dockerignore
+Dockerfile.dev
+docker-compose.override.yml
+docker-compose.dev.yml
+.docker/
+
+# Temporary Files
+tmp/
+temp/
+.tmp/
+*.tmp
+*.temp
+*~
+
+# Backup Files
+*.bak
+*.backup
+*.old
+*.orig
+backup/
+backups/
+
+# Cache Directories
+.cache/
+cache/
+.parcel-cache/
+.npm/
+.yarn/
+node_modules/
+
+# Vector Database Files (if using local storage)
+vector_db/
+faiss_index/
+*.index
+*.faiss
+chroma_db/
+pinecone_cache/
+
+# Story and Content Files (if sensitive)
+stories_private/
+content_private/
+personal_stories/
+confidential_stories/
+
+# Conversation Exports
+conversations/
+chat_exports/
+user_data/
+analytics_data/
+
+# Performance and Monitoring
+performance_logs/
+metrics/
+monitoring/
+profiling/
+
+# Deployment Files
+deployment/
+k8s/
+helm/
+terraform/
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Database Dumps
+*.sql
+*.dump
+database_backup/
+db_exports/
+
+# Configuration Overrides
+config.local.json
+settings.local.py
+local_settings.py
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Archive Files
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Compiled Files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Package Files
+*.dmg
+*.iso
+*.jar
+*.tar
+*.zip
+
+# Generated Documentation
+docs/html/
+docs/latex/
+*.pdf
+
+# Custom Project Specific
+# Uncomment and modify as needed for your specific setup
+
+# Example: If you have custom story collections
+# story_collections/private/
+# custom_personalities/confidential/
+
+# Example: If you have analytics or reporting
+# reports/
+# analytics/
+# user_metrics/
+
+# Example: If you have custom deployment scripts
+# deploy_prod.sh
+# deploy_staging.sh
+
+# Example: Bot-specific data directories
+# alex_v1_data/
+# emma_v1_data/
+# marcus_v1_data/
+
+# Example: If you have A/B testing data
+# ab_test_results/
+# experiment_data/

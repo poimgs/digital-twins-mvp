@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Alex - Default personality bot
+  bot-alex:
+    build: .
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN_ALEX}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - BOT_ID=alex_v1
+      - OPENAI_MODEL=gpt-4o-mini
+      - MAX_TOKENS=300
+      - TEMPERATURE=0.7
+    volumes:
+      - ./bot_data:/app/bot_data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Emma - Creative writer personality  
+  bot-emma:
+    build: .
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN_EMMA}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - BOT_ID=emma_v1
+      - OPENAI_MODEL=gpt-4o-mini
+      - MAX_TOKENS=500
+      - TEMPERATURE=0.8
+    volumes:
+      - ./bot_data:/app/bot_data
+    restart: unless-stopped
+
+  # Marcus - Tech entrepreneur personality
+  bot-marcus:
+    build: .
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN_MARCUS}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - BOT_ID=marcus_v1
+      - OPENAI_MODEL=gpt-4o-mini
+      - MAX_TOKENS=400
+      - TEMPERATURE=0.7
+    volumes:
+      - ./bot_data:/app/bot_data
+    restart: unless-stopped
